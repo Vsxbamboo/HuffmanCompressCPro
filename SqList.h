@@ -5,6 +5,8 @@
 #ifndef HUFFMANCOMPRESSCPRO_SQLIST_H
 #define HUFFMANCOMPRESSCPRO_SQLIST_H
 
+#include <iostream>
+
 #define ELEM_NOT_FOUND (-2)
 
 template <class T>
@@ -88,6 +90,17 @@ public:
         }else{
             return ELEM_NOT_FOUND;
         }
+    }
+    void show()const{
+        std::cout<<"-----------------------------------------------------------------"<<std::endl;
+        std::cout<<"SqList:"<<std::endl;
+        for(int i=0;i<length;i++) {
+            std::cout << elem[i] << "\t";
+            if(i%8==7)
+                std::cout<<std::endl;
+        }
+        std::cout<<std::endl;
+        std::cout<<"-----------------------------------------------------------------"<<std::endl<<std::endl;
     }
 };
 

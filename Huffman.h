@@ -1,80 +1,53 @@
 //
-// Created by vsx on 2024/2/27.
+// Created by vsx on 2024/3/2.
 //
 
 #ifndef HUFFMANCOMPRESSCPRO_HUFFMAN_H
 #define HUFFMANCOMPRESSCPRO_HUFFMAN_H
 
 #include <iostream>
-#include <string.h>
 #include "SqList.h"
+#include "HuffmanTree.h"
+
+
+//HuffmanTree Pointer£¬ÓÃÀ´ÅäºÏSqList¹æ·¶
+struct HTP{
+    HuffmanTree* p;
+    bool operator<(const HTP& rHTP)const{
+        return *p<*rHTP.p;
+    }
+    bool operator>(const HTP& rHTP)const{
+        return *p>*rHTP.p;
+    }
+    HTP& operator=(const HTP& rHTP){
+        if(this==&rHTP)
+            return *this;
+        p=rHTP.p;
+        return *this;
+    }
+    friend std::ostream& operator<<(std::ostream& os,const HTP& htp){
+        os<<htp.p->id<<":"<<htp.p->weight;
+        return os;
+    }
+};
+
+//ÓÃÓÚÔÚ±éÀúÉú³É±àÂëÊ±±£´æ±àÂë
+struct Code{
+    std::string value;
+};
+
 class Huffman {
 private:
-    struct HuffmanTree{
-        int id;
-        int weight;
-        HuffmanTree *parent,*lchild,*rchild;
-        bool operator>(const HuffmanTree& rt)const{
-            if(this->weight>rt.weight)
-                return true;
-            else
-                return false;
-        }
-        bool operator<(const HuffmanTree& rt)const{
-            if(this->weight<rt.weight)
-                return true;
-            else
-                return false;
-        }
-        HuffmanTree& operator=(const HuffmanTree& rt) {
-            if(this==&rt)
-                return *this;
-            this->id=rt.id;
-            this->weight=rt.weight;
-            this->parent=rt.parent;
-            this->lchild=rt.lchild;
-            this->rchild=rt.rchild;
-            return *this;
-        }
-    };
-    struct HTP{
-        HuffmanTree* p;
-        bool operator<(HTP &rp)const{
-            return *(this->p)<*(rp.p);
-        }
-        bool operator>(HTP &rp)const{
-            return *(this->p)>*(rp.p);
-        }
-        HTP& operator=(const HTP &rp){
-            if(this==&rp)
-                return *this;
-            this->p=rp.p;
-            return *this;
-        }
-    };
-    struct Word{
-        char *value;
-        int length;
-    }word;
-    SqList<HTP> treelist;
-    HTP root;
-    char **code;
+    //ÓÃ×÷postTraversalÊ±µÄÁÙÊ±±äÁ¿
+    Code code;
+    //½¨Ê÷
+    void build(const int *count,int length,HuffmanTree& root);
+    //Éú³É±àÂë
+    void generate(const HuffmanTree& root,std::string*& codes,int length);
+    //ÏÈĞò±éÀú²¢Éú³É±àÂë
+    void postTraversal(const HuffmanTree* rootp,std::string*& codes,int length);
 public:
-    Huffman();
-    ~Huffman();
-    void closeTree(HuffmanTree *rootp);
-    void build(int count[],int length);
-    //buildç”¨äºå»ºæ ‘ï¼Œæ¥æ”¶countæ•°ç»„ï¼Œè·å–ä¸€ç»„(æ•°ç»„åºå·:æ¬¡æ•°)å…³ç³»ï¼Œæ ¹æ®è¿™ä¸ªå…³ç³»å»ºæ ‘
-
-    void generate(char** &code,int length);//codeæ•°ç»„ç”¨æ¥æ¥æ”¶ç¼–ç ä¿¡æ¯
-    //generateç”¨äºæ ¹æ®æ ‘ç”Ÿæˆè¡¨ï¼Œæ ¹æ®buildä¸­countæ•°ç»„çš„åºå·æŠŠç¼–ç ä»¥å­—ç¬¦ä¸²çš„å½¢å¼å†™å…¥åˆ°codeæ•°ç»„ä¸­ï¼Œ
-
-    void traversal(int length);
-    //traversalç”¨äºéå†æ ‘
-
-    void subtraversal(const HuffmanTree *rootp);
-    //subtraversalæ˜¯traversalçš„å­å‡½æ•°ï¼Œç”¨æ¥é€’å½’éå†æ ‘
-
+    void buildAndGenerate(const int *count,int length,std::string*& codes);
 };
 
 

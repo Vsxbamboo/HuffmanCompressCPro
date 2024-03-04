@@ -1,110 +1,103 @@
 //
-// Created by vsx on 2024/2/27.
+// Created by vsx on 2024/3/2.
 //
 
 #include "Huffman.h"
 
-
-Huffman::Huffman() {
+void Huffman::buildAndGenerate(const int* count,const int length, std::string*& codes) {
+    HuffmanTree root;
+    build(count,length,root);
+    root.levelOrderTraversal();
+    generate(root,codes,length);
 
 }
 
-void Huffman::build(int *count, int length) {
+void Huffman::build(const int *count,const int length, HuffmanTree &root) {
+    SqList<HTP> list;
     for(int i=0;i<length;i++){
         if(count[i]==0)
             continue;
-        HuffmanTree* t=new HuffmanTree{i,count[i],nullptr,nullptr,nullptr};
-        HTP tp{t};
-        treelist.insert(tp);
+        HTP temp;
+        temp.p=new HuffmanTree;
+        temp.p->id=i;
+        temp.p->weight=count[i];
+        temp.p->parent=nullptr;
+        temp.p->lchild=nullptr;
+        temp.p->rchild=nullptr;
+        list.insert(temp);
     }
-    HuffmanTree t{};
-    while(treelist.getLength()>=2){
-        HTP lt,rt;//left tree, right tree
-
-        treelist.get(treelist.getLength()-2,lt);
-        treelist.get(treelist.getLength()-1,rt);
-        root.p=new HuffmanTree{-1,lt.p->weight+rt.p->weight,nullptr,lt.p,rt.p};
-        lt.p->parent=root.p;
-        rt.p->parent=root.p;
-
-        treelist.del(treelist.getLength()-2);
-        treelist.del(treelist.getLength()-1);
-        treelist.insert(root);
+    list.show();
+    while(list.getLength()>=2){
+        HTP lp,rp;//leftHTP,rightHTP
+        list.get(list.getLength()-2,lp);
+        list.get(list.getLength()-1,rp);
+        HTP temp;
+        temp.p=new HuffmanTree;
+        temp.p->id=-1;
+        temp.p->weight=lp.p->weight+rp.p->weight;
+        temp.p->parent=nullptr;
+        temp.p->lchild=lp.p;
+        temp.p->rchild=rp.p;
+        lp.p->parent=temp.p;
+        rp.p->parent=temp.p;
+        list.del(list.getLength()-2);
+        list.del(list.getLength()-1);
+        list.insert(temp);
     }
-    //用来防止文件只有一种字节
-    HTP one;
-    treelist.get(0,one);
-    if(one.p->id==0){
-        root.p=new HuffmanTree{-1,one.p->weight,nullptr,one.p,nullptr};
-    }
+    HTP temp;
+    //对list中只有零个或一个元素的情况先进行判断
+    if(list.getLength()==0){
+        root.id=-1;
+        root.weight=0;
+        root.parent=nullptr;
+        root.lchild=nullptr;
+        root.rchild=nullptr;
+    }else{
+        list.get(0,temp);
+        if(temp.p->id!=-1){
+            root.id=-1;
+            root.weight=temp.p->weight;
+            root.parent=nullptr;
+            root.lchild=temp.p;
+            root.rchild=nullptr;
 
-}
-
-void Huffman::traversal(int length) {
-
-    word.value=new char[length+1]{0};
-    word.length=0;
-    subtraversal(root.p);
-}
-
-void Huffman::subtraversal(const Huffman::HuffmanTree *rootp) {
-    if(rootp==nullptr){
-        return;
-
-    }
-    std::cout<<"id:"<<rootp->id<<",weight:"<<rootp->weight<<std::endl;
-    //
-
-    if(rootp->parent!=nullptr) {
-        if (rootp->parent->lchild == rootp) {
-            word.length++;
-            word.value[word.length - 1] = '0';
-        }else if (rootp->parent->rchild == rootp) {
-            word.length++;
-            word.value[word.length - 1] = '1';
-        }
-        if(rootp->id!=-1){
-            strcpy(code[rootp->id],word.value);
+            temp.p->parent=&root;
+        }else if(temp.p->id==-1){
+            root=*temp.p;
         }
     }
-    //
-
-    subtraversal(rootp->lchild);
-    subtraversal(rootp->rchild);
-
-    //
-    if(rootp->parent!=nullptr) {
-        word.value[word.length - 1] = '\0';
-        word.length--;
-    }
-    //
-
 }
 
-void Huffman::generate(char** &code,int length) {
-    this->code=new char*[length];
+void Huffman::generate(const HuffmanTree &root, std::string*& codes, const int length) {
+    codes=new std::string[length];
+    postTraversal(&root,codes,length);
+    std::cout<<"-----------------------------------------------------------------"<<std::endl;
+    std::cout<<"Codes:"<<std::endl;
     for(int i=0;i<length;i++){
-        this->code[i]=new char[length+1]{0};
+        if(codes[i]=="")
+            continue;
+        std::cout<<i<<":"<<codes[i]<<std::endl;
     }
-    traversal(length);
-    code=this->code;
-    for(int i=0;i<length;i++){
-        if(strlen(code[i])!=0)
-            std::cout<<i<<":"<<code[i]<<std::endl;
-    }
+    std::cout<<"-----------------------------------------------------------------"<<std::endl;
 }
 
-Huffman::~Huffman() {
-    delete[] code;
-    closeTree(root.p);
-}
-
-void Huffman::closeTree(Huffman::HuffmanTree *rootp) {
+void Huffman::postTraversal(const HuffmanTree *rootp,std::string*& codes,const int length) {
     if(rootp==nullptr)
         return;
-    closeTree(rootp->lchild);
-    closeTree(rootp->rchild);
-    delete rootp;
+
+    if(rootp->parent!=nullptr) {
+        if (rootp == rootp->parent->lchild) {
+            code.value.push_back('0');
+        } else if (rootp == rootp->parent->rchild) {
+            code.value.push_back('1');
+        } else {
+            std::cout << std::endl << "#HuffmanTreeError" << std::endl;
+        }
+        if (rootp->id != -1) {
+            codes[rootp->id] = code.value;
+        }
+    }
+    postTraversal(rootp->lchild, codes, length);
+    postTraversal(rootp->rchild, codes, length);
+    code.value.pop_back();
 }
-
-

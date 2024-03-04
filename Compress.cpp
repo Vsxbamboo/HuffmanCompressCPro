@@ -1,119 +1,288 @@
 //
-// Created by vsx on 2024/2/27.
+// Created by vsx on 2024/3/2.
 //
 
 #include "Compress.h"
-#include <iostream>
-Compress::Compress() {
-    filelength=0;
-}
-Compress::~Compress() {
+
+Status Compress::compress(const std::string& readfilepath,const std::string& writefilepath) {
+    Status errorCode=0;
+    CharCount count;
+    std::fstream readfile;
+    readfile.open(readfilepath,std::ios::in | std::ios::binary);
+    std::fstream writefile;
+    writefile.open(writefilepath,std::ios::out | std::ios::binary);
+    Huffman h;
+    std::string* codes;
+    Dictionary dict;
+
+    errorCode=generateCount(readfile,count);
+    if(errorCode!=0)
+        return errorCode;
+
+    h.buildAndGenerate(count.getIntArray(),count.charkinds,codes);
+    dict.codes2dict(codes,count.charkinds);
+
+    translateAndWrite(dict,readfile,writefile);
     readfile.close();
-    writefile.close();
+//    evaluate();
+
+
+    return errorCode;
 }
-int Compress::open(std::string filepath) {
-    //æ£€æŸ¥æ–‡ä»¶è·¯å¾„æ˜¯å¦ä¸ºç©º
-    if(filepath==nullptr)
-        return FILE_NOT_FOUND;
-    //æ‰“å¼€æ–‡ä»¶
-    readfile.open(filepath,std::ios::in | std::ios::binary);
-    //æ£€æŸ¥æ‰“å¼€æ–‡ä»¶æ˜¯å¦æˆåŠŸ
-    if(!readfile.is_open())
-        return FILE_OPEN_FAILURE;
-    //è·å–æ–‡ä»¶é•¿åº¦
+
+Status Compress::generateCount(std::fstream& readfile, CharCount &count) {
+    if(!readfile.is_open()){
+        return FILE_OPEN_ERROR;
+    }
     readfile.seekg(0,std::ios::end);
-    filelength=readfile.tellg();
+    int filelength=readfile.tellg();
     readfile.seekg(0,std::ios::beg);
-    if(filelength==0)
-        return FILE_EMPTY_ERROR;
+    if(filelength==0){
+        return EMPTY_FILE_ERROR;
+    }
+    char readbuf;
+    for(int i=0;i<filelength;i++){
+        readfile.read(&readbuf,1);
+        count.plus(readbuf);
+    }
+    count.show();
+    readfile.seekg(0,std::ios::beg);
     return 0;
 }
 
-int Compress::compress(std::string readfilepath,std::string writefilepath) {
-    int openresult=open(readfilepath);
-    if(openresult!=0)
-        return openresult;
+Status Compress::translateAndWrite(Dictionary &dict, std::fstream &readfile,std::fstream& writefile) {
+    /*
+     * ÎÄ¼şÍ·²¿·Ö°üº¬char modBits,char EntryLength,EntryInFile{char byte,char bits,char code}
+     * */
+    //»ñÈ¡×îºóÒ»¸ö×Ö½ÚÓĞĞ§Î»
+    Status errorCode=0;
+    int validbits;
+    getValidBits(readfile,dict,validbits);
+    //»ñÈ¡´ıĞ´Èë×Öµä³¤¶È
+    int entryLength;
+    getEntryLength(dict,entryLength);
+    //Éú³É´ıĞ´Èë×Öµä
+    EntryInFile *eif;
+    dict2EIF(dict,eif);
+    //´ò¿ª´ıĞ´ÈëÎÄ¼ş
+    if(!writefile.is_open()){
+        return FILE_OPEN_ERROR;
+    }
+    //Ğ´ÈëÎÄ¼şĞÅÏ¢Í·
+    errorCode=writeHead(writefile,validbits,entryLength,eif);
+    if(errorCode!=0)
+        return errorCode;
+    //Ğ´ÈëÕıÎÄ
+    errorCode=writeBody(readfile,dict,writefile);
+    if(errorCode!=0)
+        return errorCode;
+    writefile.close();
+    return errorCode;
+}
 
-    //æ£€æŸ¥æ˜¯å¦å·²ç»è¯»å–æ–‡ä»¶åˆ°readbuf
-    if(!readfile.is_open())
-        return FILE_NOT_READ;
 
-    //ç»Ÿè®¡å„ä¸ªcharå€¼å‡ºç°æ¬¡æ•°
-    int count[256]={0};
+Status Compress::getValidBits(std::fstream &readfile, const Dictionary &dict,int& validbits) const {
+    if(!readfile.is_open()){
+        return FILE_OPEN_ERROR;
+    }
+    validbits=0;
+    char readbuf;
+    readfile.seekg(0,std::ios::end);
+    int filelength=readfile.tellg();
+    readfile.seekg(0,std::ios::beg);
     for(int i=0;i<filelength;i++){
-        char buf;
-        readfile.read(&buf,1);
-        count[buf-CHAR_MIN]++;
+        readfile.read(&readbuf,1);
+        validbits+=dict.getbyByte(readbuf).length();
+        validbits%=8;
     }
     readfile.seekg(0,std::ios::beg);
-    //è¾“å‡ºç»Ÿè®¡çš„æ¬¡æ•°
-    for(int i=0;i<256;i++){
-        std::cout<<count[i]<<" ";
+    std::cout<<"validbits:"<<validbits<<std::endl;
+    return 0;
+}
+
+void Compress::getEntryLength(const Dictionary &dict, int &entryLength) const {
+    entryLength=0;
+    for(char byte=CHAR_MIN;;byte++){
+        if(!dict.getbyByte(byte).empty())
+            entryLength++;
+        if(byte==CHAR_MAX)
+            break;
     }
-    std::cout<<std::endl;
+    std::cout<<"EntryLength:"<<entryLength<<std::endl;
+}
 
-    //æ ¹æ®æ¬¡æ•°æ„å»ºå“ˆå¤«æ›¼æ ‘
-    huffman.build(count,256);
-    //ç”Ÿæˆå‹ç¼©ç¼–ç 
-    char **code;
-    huffman.generate(code,256);
+void Compress::EIF2dict(const EntryInFile *eif, const int entryLength, Dictionary &dict) {
+    std::string *codes;
+    codes=new std::string[DICTSIZE];
+    for(int i=0;i<entryLength;i++){
+        codes[eif[i].byte-CHAR_MIN]= byte2strbin(eif[i].code,eif[i].bits);
+    }
+    dict.codes2dict(codes,DICTSIZE);
+}
 
-    //ç¿»è¯‘å¹¶å†™å…¥
-    write(writefilepath,code);
-    readfile.close();
+void Compress::dict2EIF(const Dictionary &dict, EntryInFile *&eif) const {
+    int entryLength;
+    getEntryLength(dict,entryLength);
+    eif=new EntryInFile[entryLength];
+    int index=0;
+    for(char byte=CHAR_MIN;;byte++){
+        if(!dict.getbyByte(byte).empty()){
+            eif[index].byte=byte;
+            eif[index].bits=(char)dict.getbyByte(byte).length();
+            eif[index].code=strbin2byte(dict.getbyByte(byte));
+            index++;
+        }
+        if(byte==CHAR_MAX)
+            break;
+    }
+    std::cout<<"-----------------------------------------------------------------"<<std::endl;
+    std::cout<<"EntryInFile:"<<std::endl;
+    for(int i=0;i<entryLength;i++){
+        std::cout<<(int)eif[i].byte<<":"<<(int)eif[i].bits<<":"<<(int)eif[i].code<<"\t";
+        if(i%4==3)
+            std::cout<<std::endl;
+    }
+    std::cout<<std::endl<<"-----------------------------------------------------------------"<<std::endl;
+}
+
+char Compress::strbin2byte(const std::string &str) const {
+    char byte=0;
+    for(int i=0;i<str.length();i++){
+        byte=byte<<1;
+        if(str[i]=='1'){
+            byte=byte | 0b00000001;
+        }
+    }
+    return byte;
+}
+
+std::string Compress::byte2strbin(char code, const char bits) const {
+    std::string strbin;
+    for(char i=0;i<bits;i++){
+        if((code & 0b00000001) == 0b00000001){
+            strbin='1'+strbin;
+        }else if((code & 0b00000001) == 0b00000000){
+            strbin='0'+strbin;
+        }
+        code=code>>1;
+    }
+    return strbin;
+}
+
+Status Compress::writeHead(std::fstream &writefile, const int validbits, const int entryLength,const EntryInFile *eif) {
+    if(!writefile.is_open()){
+        return FILE_OPEN_ERROR;
+    }
+    if(validbits<0 || validbits>7 || entryLength<0 || entryLength>255)
+        return HEAD_DATA_ERROR;
+    char modBits=(char)validbits;
+    char EntryLength=(char)entryLength;
+
+    writefile.write(&modBits,1);
+    writefile.write(&EntryLength,1);
+
+    for(int i=0;i<entryLength;i++){
+        writefile.write(&eif[i].byte,1);
+        writefile.write(&eif[i].bits,1);
+        writefile.write(&eif[i].code,1);
+    }
+    std::cout<<"WriteHead has been finished!"<<std::endl;
+    return 0;
+}
+
+Status Compress::writeBody(std::fstream &readfile, Dictionary &dict, std::fstream& writefile) {
+    Status errorCode=0;
+    CodeBuffer cb(writefile,dict);
+    readfile.seekg(0,std::ios::end);
+    int filelength=readfile.tellg();
+    readfile.seekg(0,std::ios::beg);
+    char readbuf;
+    for(int i=0;i<filelength;i++){
+        readfile.read(&readbuf,1);
+        errorCode=cb.write(dict.getbyByte(readbuf));
+        if(errorCode!=0)
+            return errorCode;
+    }
+    cb.fillAndWrite();
+    return errorCode;
+}
+
+Status Compress::readBody(std::fstream& readfile,Dictionary& dict,int validbits,std::fstream& writefile){
+    Status errorCode=0;
+    CodeBuffer cb(readfile,dict,validbits);
+
+    char byte;
+    while(cb.read(byte)!=CB_EOF){
+        writefile.write(&byte,1);
+//        std::cout<<"deread:"<<byte2strbin(byte,8)<<std::endl;
+    }
+    return errorCode;
+}
+
+Status Compress::readHead(std::fstream &readfile, int &validbits, int &entryLength, EntryInFile *&eif) {
+    if(!readfile.is_open()){
+        return FILE_OPEN_ERROR;
+    }
+    char modBits;
+    char EntryLength;
+    readfile.seekg(0,std::ios::beg);
+    readfile.read(&modBits,1);
+    readfile.read(&EntryLength,1);
+    validbits=modBits;
+    entryLength=EntryLength;
+    eif=new EntryInFile[entryLength];
+    for(int i=0;i<entryLength;i++){
+        readfile.read(&eif[i].byte,1);
+        readfile.read(&eif[i].bits,1);
+        readfile.read(&eif[i].code,1);
+    }
+    std::cout<<"-----------------------------------------------------------------"<<std::endl;
+    std::cout<<"EntryInFile:"<<validbits<<","<<entryLength<<std::endl;
+    for(int i=0;i<entryLength;i++){
+        std::cout<<(int)eif[i].byte<<":"<<(int)eif[i].bits<<":"<<(int)eif[i].code<<"\t";
+        if(i%4==3)
+            std::cout<<std::endl;
+    }
+    std::cout<<std::endl<<"-----------------------------------------------------------------"<<std::endl;
+    return 0;
+}
+
+Status Compress::decompress(std::string readfilepath, std::string writefilepath) {
+    //ÒÔÏÂÊÇ²âÊÔ´úÂë
+    std::fstream readfile;
+    readfile.open(readfilepath,std::ios::in | std::ios::binary);
+    EntryInFile* eif;
+    int validbits,entryLength;
+    readHead(readfile,validbits,entryLength,eif);
+    Dictionary dict;
+    EIF2dict(eif,entryLength,dict);
+    std::fstream writefile;
+    writefile.open(writefilepath,std::ios::out | std::ios::binary);
+    //dict.treeSearch()²âÊÔ
+    /*
+    char byte=0;
+    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
+    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
+    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
+    std::cout<<"dictTree:"<<(dict.treeSearch('0',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
+    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
+    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
+    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
+     */
+    readBody(readfile,dict,validbits,writefile);
     writefile.close();
     return 0;
 }
 
-int Compress::write(char *filepath,char **code) {
-    char readbuf;//å­˜å‚¨è¯»å…¥å­—èŠ‚
-    char tranbuf[TRANBUF_LENGTH+1]={0};//å­˜å‚¨ç¿»è¯‘å­—ç¬¦ä¸²
-    int tbp=0;//tranbuf pointer,å­˜å‚¨ç¿»è¯‘å­—ç¬¦ä¸²ä½¿ç”¨ç¨‹åº¦
-    char writebuf;//å­˜å‚¨å†™å…¥å­—èŠ‚
-    std::fstream writefile(filepath,std::ios::app | std::ios::binary);
-    for(int i=0;i<filelength;i++){
-        std::cout<<"\rcurrent i:"<<i<<"/"<<filelength<<std::endl;
-        if(i==33){
-            i=33;
-        }
-        readfile.read(&readbuf,1);
-        int codelength=strlen(code[(int)readbuf-CHAR_MIN]);
-        std::cout<<"index:"<<(int)readbuf-CHAR_MIN<<",strlen:"<<strlen(code[(int)readbuf-CHAR_MIN])<<std::endl;
-        for(int j=0;j<codelength;j++){
-            if(tbp+j==TRANBUF_LENGTH){
-                str2byte(tranbuf,writebuf);
-                //std::cout<<"i:"<<i<<","<<tranbuf<<":"<<(int)(writebuf-CHAR_MIN)<<std::endl;
-                writefile.write(&writebuf,1);
-                //æ¸…ç©ºtranbuf
-                for(int k=0;k<TRANBUF_LENGTH;k++)
-                    tranbuf[k]='\0';
-                tbp=0;
-            }
-            tranbuf[tbp+j]=code[(int)readbuf-CHAR_MIN][j];
-        }
-        tbp+=codelength;
-    }
-    if(tbp!=0){
-        for(int i=0;i+tbp<TRANBUF_LENGTH;i++){
-            tranbuf[tbp+i]='0';
-        }
-    }
-    return 0;
-}
 
-void Compress::str2byte(char* str,char& byte){
-    byte=0;
-    for(int i=0;i<8;i++){
-        byte=byte<<1;
-        byte=byte | (str[i]-'0');
-    }
-}
 
-int Compress::evaluate() {
-    std::cout<<"#"<<filelength;
 
-    return 0;
-}
+
+
+
+
+
+
 
 
 

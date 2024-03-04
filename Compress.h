@@ -1,66 +1,47 @@
 //
-// Created by vsx on 2024/2/27.
+// Created by vsx on 2024/3/2.
 //
 
 #ifndef HUFFMANCOMPRESSCPRO_COMPRESS_H
 #define HUFFMANCOMPRESSCPRO_COMPRESS_H
 
+#include <string>
+#include <iostream>
 #include <fstream>
+#include "Dictionary.h"
+#include "CharCount.h"
 #include "Huffman.h"
+#include "EntryInFile.h"
+#include "CodeBuffer.h"
 
-/*
- * 压缩类
- * 让外部只需要调用一个函数就可以完成压缩功能
- * 形如：Compress.compress(<source file path>,<destination file path>);
- * 即: int compress(char *readfilepath,char *writefilepath);
- * compress函数中通过调用其他函数来完成功能，先open,再建立压缩表，最后write()。
- *
- *
- * */
-
-/*
- * 字典结构
- * 对应char值 编码长度 编码+补0
- * 优化后的解码字典结构按编码长度排列
- * */
-
-/*
- * 文件头部结构
- * 编码最后一个字节有效位数
- * 字典数组
- * */
-
-#define FILE_NOT_FOUND (-2)
-#define FILE_OPEN_FAILURE (-3)
-#define FILE_NOT_READ (-4)
-#define FILE_EMPTY_ERROR (-5)
-#define TRANBUF_LENGTH (sizeof(char)*8)
+#define Status int //表示函数执行状态
+#define FILE_OPEN_ERROR (-1) //文件打开错误
+#define HEAD_DATA_ERROR (-2) //文件头函数参数错误
+#define EMPTY_FILE_ERROR (-3) //空文件不支持错误
 class Compress {
 private:
-
-    std::fstream readfile;//待压缩的读取文件对象
-    std::fstream writefile;//压缩后的写入文件对象
-    std::streampos filelength;//待压缩文件长度
-    Huffman huffman;
-
-    void str2byte(char* str,char& byte);
-    //用于将8位0,1字符串转换成char类型，方便write()的写入
+    //初始化文件对象，并计算各个char取值的次数
+    Status generateCount(std::fstream& readfile,CharCount& count);
+    //根据字典翻译并输出文件
+    Status translateAndWrite(Dictionary& dict,std::fstream& readfile,std::fstream& writefile);
+    Status getValidBits(std::fstream& readfile,const Dictionary& dict,int& validbits)const;
+    void getEntryLength(const Dictionary& dict,int& entryLength)const;
+    void dict2EIF(const Dictionary& dict,EntryInFile*& eif)const;
+    void EIF2dict(const EntryInFile* eif,const int entryLength,Dictionary& dict);
+    char strbin2byte(const std::string& str)const;
+    std::string byte2strbin(char code,const char bits)const;
+    Status writeHead(std::fstream& writefile,int validbits,int entryLength,const EntryInFile* eif);
+    Status readHead(std::fstream& readfile,int& validbits,int& entryLength,EntryInFile*& eif);
+    Status writeBody(std::fstream& readfile,Dictionary& dict,std::fstream& writefile);
+    Status readBody(std::fstream& readfile,Dictionary& dict,int validbits,std::fstream& writefile);
 public:
-    Compress();
-    ~Compress();
 
-
-    int open(char *filepath);
-    //open函数需要验证文件存在和初始化对象readfile，同时初始化后面循环中用得到的filelength
-
-    int compress(std::string readfilepath,std::string writefilepath);
-    //compress是最后的综合体，交由外部调用
-
-    int write(char *filepath,char **code);
-    //write负责压缩后的文件翻译与写入
-
-    int evaluate();
-    //evaluate负责调试输出，例如文件是否正确读取的判断、压缩率的计算
+    //对外的压缩接口
+    Status compress(const std::string& readfilepath,const std::string& writefilepath);
+    //对外的解压接口
+    Status decompress(std::string readfilepath,std::string writefilepath);
+    //评估函数，用来计算压缩率等
+    void evaluate();
 };
 
 
