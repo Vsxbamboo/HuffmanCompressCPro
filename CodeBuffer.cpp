@@ -19,20 +19,21 @@ Status CodeBuffer::write(const std::string& strbin) {
         strbuf.append(strbin);
     }else{//大于一个char的长度时，多次写入直到小于8
         //如果strbuf>=8，先连续写入，直到小于8
+        strbuf+=strbin;
         while(strbuf.length()>8){
             io = strbuf2byte();
             file.write(&io, 1);
-            strbuf = strbin.substr(8);
+            strbuf = strbuf.substr(8,strbuf.length()-8);
         }
 
-            int remainLength = 8 - strbuf.length();
-            strbuf += strbin.substr(0, remainLength);
-
-//        std::cout<<"write:"<<strbuf<<std::endl;
-
-            io = strbuf2byte();
-            file.write(&io, 1);
-            strbuf = strbin.substr(remainLength);
+//            int remainLength = 8 - strbuf.length();
+//            strbuf += strbin.substr(0, remainLength);
+//
+////        std::cout<<"write:"<<strbuf<<std::endl;
+//
+//            io = strbuf2byte();
+//            file.write(&io, 1);
+//            strbuf = strbin.substr(remainLength);
 
 //        std::cout<<"afterwrite,strbuf:"<<strbuf<<" "<<std::endl;
 

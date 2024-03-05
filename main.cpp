@@ -4,9 +4,9 @@
 int main() {
 
     //用参数或者其他形式输入两个地址
-    std::string readfilepath=R"(C:\E\cpp\HuffmanCompressCPro\assets\Pic.bmp)";
-    std::string writefilepath=R"(C:\E\cpp\HuffmanCompressCPro\assets\Pic.bmp.huf)";
-    std::string destfilepath=R"(C:\E\cpp\HuffmanCompressCPro\assets\Pic.dest.bmp)";
+    std::string readfilepath=R"(C:\E\cpp\HuffmanCompressCPro\assets\half.csv)";
+    std::string writefilepath=R"(C:\E\cpp\HuffmanCompressCPro\assets\half.csv.huf)";
+    std::string destfilepath=R"(C:\E\cpp\HuffmanCompressCPro\assets\half.dest.csv)";
     //使用Compress.compress(readfilepath,writefilepath)压缩
     Compress c;
     Status compressResult=c.compress(readfilepath,writefilepath);

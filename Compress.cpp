@@ -238,6 +238,10 @@ Status Compress::writeBody(std::fstream &readfile, Dictionary &dict, std::fstrea
     readfile.seekg(0,std::ios::beg);
     char readbuf;
     for(int i=0;i<filelength;i++){
+        if(i==33) {
+            std::cout << i << " ";
+            std::cout << i << " ";
+        }
         readfile.read(&readbuf,1);
         errorCode=cb.write(dict.getbyByte(readbuf));
         if(errorCode!=0)
