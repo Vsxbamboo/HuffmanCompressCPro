@@ -34,10 +34,10 @@ int EntryInFile::getBits() const {
 }
 
 std::string EntryInFile::visual() const {
-//    std::string temp=code;
-//    while(temp.length()%8!=0){
-//        temp.push_back('0');
-//    }
+    std::string temp=code;
+    while(temp.length()%8!=0){
+        temp.push_back('0');
+    }
     return code;
 }
 
@@ -49,7 +49,6 @@ void EntryInFile::setCode(char *code, char bits) {
     this->code.clear();
     int realbits=bits-CHAR_MIN+1;
     char byte;
-//    std::cout<<"code:";
 
     for(char i=0;i<realbits;i++){
         if(i%8==0)
@@ -60,9 +59,8 @@ void EntryInFile::setCode(char *code, char bits) {
             this->code.push_back('0');
         }
         byte=byte<<1;
-//        std::cout<<this->code[i];
     }
-//    std::cout<<std::endl;
+
 
 }
 

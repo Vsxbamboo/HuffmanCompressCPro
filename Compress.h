@@ -41,7 +41,7 @@ public:
     //对外的解压接口
     Status decompress(std::string readfilepath,std::string writefilepath);
     //评估函数，用来计算压缩率等
-    void evaluate();
+    void evaluate(const std::string& readfilepath,const std::string& writefilepath);
 };
 
 

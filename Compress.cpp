@@ -25,7 +25,7 @@ Status Compress::compress(const std::string& readfilepath,const std::string& wri
 
     translateAndWrite(dict,readfile,writefile);
     readfile.close();
-//    evaluate();
+    evaluate(readfilepath,writefilepath);
 
 
     return errorCode;
@@ -188,10 +188,7 @@ Status Compress::writeHead(std::fstream &writefile, const int validbits, const i
         writefile.write(&bits,1);
         char *code=new char[eif[i].getCodeLength()];
         code=eif[i].getCode();
-//        for(int i=0;i<eif[i].getCodeLength();i++){
-//            std::cout<<"getCode:"<<byte2strbin(code[i],8)<<" ";
-//        }
-//        std::cout<<std::endl;
+
         writefile.write(code,eif[i].getCodeLength());
     }
     std::cout<<"WriteHead has been finished!"<<std::endl;
@@ -238,10 +235,7 @@ Status Compress::writeBody(std::fstream &readfile, Dictionary &dict, std::fstrea
     readfile.seekg(0,std::ios::beg);
     char readbuf;
     for(int i=0;i<filelength;i++){
-        if(i==33) {
-            std::cout << i << " ";
-            std::cout << i << " ";
-        }
+
         readfile.read(&readbuf,1);
         errorCode=cb.write(dict.getbyByte(readbuf));
         if(errorCode!=0)
@@ -258,7 +252,6 @@ Status Compress::readBody(std::fstream& readfile,Dictionary& dict,int validbits,
     char byte;
     while(cb.read(byte)!=CB_EOF){
         writefile.write(&byte,1);
-//        std::cout<<"deread:"<<byte2strbin(byte,8)<<std::endl;
     }
     return errorCode;
 }
@@ -276,32 +269,22 @@ Status Compress::decompress(std::string readfilepath, std::string writefilepath)
     EIF2dict(eif,entryLength,dict);
     std::fstream writefile;
     writefile.open(writefilepath,std::ios::out | std::ios::binary);
-    //dict.treeSearch()²âÊÔ
-    /*
-    char byte=0;
-    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
-    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
-    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
-    std::cout<<"dictTree:"<<(dict.treeSearch('0',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
-    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
-    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
-    std::cout<<"dictTree:"<<(dict.treeSearch('1',byte)==NODE_FOUND)<<","<<(int)byte<<std::endl;
-     */
+
     readBody(readfile,dict,validbits,writefile);
     writefile.close();
+
     return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+void Compress::evaluate(const std::string& readfilepath,const std::string& writefilepath) {
+    std::streamsize readfilelength,writefilelength;
+    std::fstream readfile,writefile;
+    readfile.open(readfilepath,std::ios::in | std::ios::binary);
+    writefile.open(writefilepath,std::ios::in | std::ios::binary);
+    readfile.seekg(0,std::ios::end);
+    readfilelength=readfile.tellg();
+    writefile.seekg(0,std::ios::end);
+    writefilelength=writefile.tellg();
+    std::cout<<writefilelength<<"/"<<readfilelength<<std::endl;
+    std::cout<<"Compress Rate:"<<1.0*writefilelength/readfilelength*100<<"%"<<std::endl;
+}
