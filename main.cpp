@@ -24,24 +24,24 @@ int main() {
     }
 
 
-    std::fstream file;
-    file.open(destfilepath,std::ios::in | std::ios::binary);
-    file.seekg(0,std::ios::end);
-    int filelength=file.tellg();
-    std::cout<<"filelength:"<<filelength<<std::endl;
-    file.seekg(0,std::ios::beg);
-    char byte;
-    for(int i=0;i<filelength;i++){
-        file.read(&byte,1);
-        std::cout<<(int)byte<<",";
-        std::string strbin;
-        for(int i=0;i<8;i++){
-            std::cout<<((byte>>7)&1);
-            byte=byte<<1;
-        }
-        std::cout<<strbin<<" ";
-    }
-    file.close();
-
-
+//    std::fstream file;
+//    file.open(destfilepath,std::ios::in | std::ios::binary);
+//    file.seekg(0,std::ios::end);
+//    int filelength=file.tellg();
+//    std::cout<<"filelength:"<<filelength<<std::endl;
+//    file.seekg(0,std::ios::beg);
+//    char byte;
+//    for(int i=0;i<filelength;i++){
+//        file.read(&byte,1);
+//        std::cout<<(int)byte<<",";
+//        std::string strbin;
+//        for(int i=0;i<8;i++){
+//            std::cout<<((byte>>7)&1);
+//            byte=byte<<1;
+//        }
+//        std::cout<<strbin<<" ";
+//    }
+//    file.close();
+//    system("pause");
+    return 0;
 }

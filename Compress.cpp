@@ -16,6 +16,7 @@ Status Compress::compress(const std::string& readfilepath,const std::string& wri
     Dictionary dict;
 
     errorCode=generateCount(readfile,count);
+
     if(errorCode!=0)
         return errorCode;
 
@@ -116,6 +117,7 @@ void Compress::EIF2dict(const EntryInFile *eif, const int entryLength, Dictionar
     codes=new std::string[DICTSIZE];
     for(int i=0;i<entryLength;i++){
         codes[eif[i].byte-CHAR_MIN]= byte2strbin(eif[i].code,eif[i].bits);
+
     }
     dict.codes2dict(codes,DICTSIZE);
 }

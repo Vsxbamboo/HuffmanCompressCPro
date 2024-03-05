@@ -20,8 +20,7 @@
 #define EMPTY_FILE_ERROR (-3) //空文件不支持错误
 class Compress {
 private:
-    //初始化文件对象，并计算各个char取值的次数
-    Status generateCount(std::fstream& readfile,CharCount& count);
+
     //根据字典翻译并输出文件
     Status translateAndWrite(Dictionary& dict,std::fstream& readfile,std::fstream& writefile);
     Status getValidBits(std::fstream& readfile,const Dictionary& dict,int& validbits)const;
@@ -35,7 +34,8 @@ private:
     Status writeBody(std::fstream& readfile,Dictionary& dict,std::fstream& writefile);
     Status readBody(std::fstream& readfile,Dictionary& dict,int validbits,std::fstream& writefile);
 public:
-
+    //初始化文件对象，并计算各个char取值的次数
+    Status generateCount(std::fstream& readfile,CharCount& count);
     //对外的压缩接口
     Status compress(const std::string& readfilepath,const std::string& writefilepath);
     //对外的解压接口

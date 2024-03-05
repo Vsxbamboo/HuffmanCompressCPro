@@ -15,19 +15,27 @@ Status CodeBuffer::write(const std::string& strbin) {
 //    std::cout<<"strbin"<<strbin<<std::endl;
     if(!file.is_open())
         return FILE_OPEN_ERROR;
-    if(strbin.length()+strbuf.length()<=8){
+    if(strbin.length()+strbuf.length()<=8){//小于一个char的长度的时候不写入
         strbuf.append(strbin);
-    }else{
-        int remainLength=8-strbuf.length();
-        strbuf+=strbin.substr(0,remainLength);
+    }else{//大于一个char的长度时，多次写入直到小于8
+        //如果strbuf>=8，先连续写入，直到小于8
+        while(strbuf.length()>8){
+            io = strbuf2byte();
+            file.write(&io, 1);
+            strbuf = strbin.substr(8);
+        }
+
+            int remainLength = 8 - strbuf.length();
+            strbuf += strbin.substr(0, remainLength);
 
 //        std::cout<<"write:"<<strbuf<<std::endl;
 
-        io=strbuf2byte();
-        file.write(&io,1);
-        strbuf=strbin.substr(remainLength);
+            io = strbuf2byte();
+            file.write(&io, 1);
+            strbuf = strbin.substr(remainLength);
 
 //        std::cout<<"afterwrite,strbuf:"<<strbuf<<" "<<std::endl;
+
     }
     return 0;
 }
@@ -35,7 +43,7 @@ Status CodeBuffer::write(const std::string& strbin) {
 char CodeBuffer::strbuf2byte() const{
     char byte;
     byte=byte & 0b00000000;
-    for(int i=0;i<strbuf.length();i++){
+    for(int i=0;i<8;i++){
         byte=byte<<1;
         if(strbuf[i]=='1'){
             byte=byte | 0b00000001;
