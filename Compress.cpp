@@ -174,13 +174,13 @@ Status Compress::writeHead(std::fstream &writefile, const int validbits, const i
     if(!writefile.is_open()){
         return FILE_OPEN_ERROR;
     }
-    if(validbits<0 || validbits>7 || entryLength<0 || entryLength>255)
+    if(validbits<0 || validbits>7)
         return HEAD_DATA_ERROR;
     char modBits=(char)validbits;
-    char EntryLength=(char)entryLength;
+    char EntryLength=(char)(entryLength+CHAR_MIN);
 
     writefile.write(&modBits,1);
-    writefile.write(&EntryLength,1);
+    writefile.write((char*)&entryLength,sizeof(int));
 
     for(int i=0;i<entryLength;i++){
         writefile.write(&eif[i].byte,1);
@@ -206,9 +206,9 @@ Status Compress::readHead(std::fstream &readfile, int &validbits, int &entryLeng
     char EntryLength;
     readfile.seekg(0,std::ios::beg);
     readfile.read(&modBits,1);
-    readfile.read(&EntryLength,1);
+    readfile.read((char*)&entryLength,sizeof(int));
     validbits=modBits;
-    entryLength=EntryLength;
+//    entryLength=EntryLength-CHAR_MIN;
     eif=new EntryInFile[entryLength];
     for(int i=0;i<entryLength;i++){
         readfile.read(&eif[i].byte,1);
