@@ -99,5 +99,7 @@ void Huffman::postTraversal(const HuffmanTree *rootp,std::string*& codes,const i
     }
     postTraversal(rootp->lchild, codes, length);
     postTraversal(rootp->rchild, codes, length);
-    code.value.pop_back();
+    if (rootp->parent != nullptr) {
+        code.value.pop_back();
+    }
 }

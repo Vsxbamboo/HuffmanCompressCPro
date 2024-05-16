@@ -9,7 +9,7 @@
 #include <fstream>
 #include "Dictionary.h"
 
-#define FILE_OPEN_ERROR -1
+#define CB_FILE_OPEN_ERROR -1
 #define CB_EOF 1
 
 class CodeBuffer {
