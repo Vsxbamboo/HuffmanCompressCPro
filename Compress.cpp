@@ -181,7 +181,7 @@ Status Compress::writeHead(std::fstream &writefile, const int validbits, const i
 
     writefile.write(&modBits,1);
     writefile.write((char*)&entryLength,sizeof(int));
-
+    
     for(int i=0;i<entryLength;i++){
         writefile.write(&eif[i].byte,1);
         char bits=eif[i].getBits()+CHAR_MIN-1;
@@ -285,6 +285,7 @@ void Compress::evaluate(const std::string& readfilepath,const std::string& write
     readfilelength=readfile.tellg();
     writefile.seekg(0,std::ios::end);
     writefilelength=writefile.tellg();
+    std::cout<<"readfilepath:"<<readfilepath<<std::endl<<"writefilepath:"<<writefilepath<<std::endl;
     std::cout<<writefilelength<<"/"<<readfilelength<<std::endl;
     std::cout<<"Compress Rate:"<<1.0*writefilelength/readfilelength*100<<"%"<<std::endl;
 }
