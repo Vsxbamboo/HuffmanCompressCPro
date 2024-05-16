@@ -1,12 +1,4 @@
 #include <iostream>
-#ifdef __MINGW32__
-#include <unistd.h>
-#else
-#ifdef _MSC_VER
-#include <io.h>
-#include <process.h>
-#endif
-#endif
 #include <filesystem>
 #include "Compress.h"
 
