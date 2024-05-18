@@ -20,4 +20,6 @@ add_executable(HuffmanCompressCPro main.cpp
         EntryInFile.h
         CodeBuffer.cpp
         CodeBuffer.h
+        "lib/md5.cpp"
+        "lib/md5.h"
 )

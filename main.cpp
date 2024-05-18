@@ -1,6 +1,7 @@
 #include <iostream>
 #include <filesystem>
 #include "Compress.h"
+#include "lib/md5.h"
 
 void showhelp() {
 	std::filesystem::path currentpath = std::filesystem::current_path();
@@ -28,25 +29,26 @@ int main(int argc, char* argv[]) {
 			writepath = currentpath / writepath;
 		}
 		if (mode == "c") {
-
-
 			Status compressResult = c.compress(readpath.string(), writepath.string());
 			if (compressResult == 0) {
 				std::cout << "Compress Success!" << std::endl;
 			}
 			else {
-				std::cout << "ErrorCode:" << compressResult;
+				std::cout << "ErrorCode:" << compressResult << std::endl;
 			}
 		}
 		else if (mode == "d") {
-
-
 			Status decompressResult = c.decompress(readfilepath, writefilepath);
 			if (decompressResult == 0) {
 				std::cout << "Decompress Success!" << std::endl;
 			}
 			else {
-				std::cout << "ErrorCode:" << decompressResult;
+				std::cout << "ErrorCode:" << decompressResult << std::endl;
+				switch (decompressResult) {
+				case MD5_NOT_MATCH:
+					std::cout << "MD5 checksum mismatch. Check the integrity of your compressed file." << std::endl;
+					break;
+				}
 			}
 		}
 		else {
